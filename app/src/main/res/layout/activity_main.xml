@@ -12,10 +12,20 @@
     tools:context="websocket.lxy.com.socio.MainActivity">
 
     <Button
-        android:onClick="connServer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:onClick="connServer"
         android:text="连接服务器" />
+
+    <TextView
+        android:id="@+id/tv_conn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        android:padding="15dp"
+        android:text="状态"
+        android:textColor="#000"
+        android:textSize="20sp" />
 
 
 </LinearLayout>
