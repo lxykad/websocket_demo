@@ -11,6 +11,9 @@ import com.alibaba.fastjson.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+
 import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
@@ -39,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
 
             mSocket = IO.socket("http://www.58caimi.com/", opts);
-            mSocket.connect();
+
             //mSocket = IO.socket("http://www.58caimi.com/");
 
             //boolean connected = mSocket.connected();
@@ -50,29 +53,46 @@ public class MainActivity extends AppCompatActivity {
                 public void call(Object... args) {
                     System.out.println("connect=====conn==" + args);
                 }
-            }).on(Socket.EVENT_MESSAGE, new Emitter.Listener() {
+            });
+            mSocket.on(Socket.EVENT_MESSAGE, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
                     System.out.println("connect====msg===" + args);
                 }
-            }).on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+            });
+            mSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
                     System.out.println("connect====disconn===" + args);
                     mTv.setText("断开连接");
                 }
-            }).on(Socket.EVENT_PING, new Emitter.Listener() {
+            });
+            mSocket.on(Socket.EVENT_PING, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    System.out.println("connect====ping===");
+                    System.out.println("connect====ping===" + args.toString());
                 }
-            }).on("", new Emitter.Listener() {
+            });
+            mSocket.on("sub", new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
-                    System.out.println("connect====server===" + args.toString());
+                    System.out.println("connect====sub===" + args.toString());
+                }
+            });
+            mSocket.on("channel", new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    System.out.println("connect====channel===" + args.toString());
+                }
+            });
+            mSocket.on("detail", new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    System.out.println("connect====detail===" + args.toString());
                 }
             });
 
+             mSocket.connect();
 
             /**
              *
@@ -105,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         //断开连接，取消监听
         mSocket.disconnect();
-        mSocket.off("new_event");
+        mSocket.off("sub");
     }
 
     //conn
@@ -114,25 +134,95 @@ public class MainActivity extends AppCompatActivity {
         boolean connected = mSocket.connected();
 
         //{"symbols":["000001.SZ","000001.SS"],"channel":"detail"}
+        System.out.println("connect=====connected===" + connected);
 
         if (connected) {
             mTv.setText("连接成功");
 
-            JSONObject obj = new JSONObject();
-
             try {
+
+//                ArrayList<String> list = new ArrayList<>();
+//                list.add("000001.SZ");
+//                list.add("000001.SS");
+
+                org.json.JSONArray array = new org.json.JSONArray();
+                array.put(0, "000001.SZ");
+                array.put(1, "000001.SS");
+
+
+                JSONObject obj = new JSONObject();
+
                 obj.put("channel", "detail");
-                obj.put("symbols", "['000001.SZ','000001.SS']");
+                obj.put("symbols", array);
 
-                System.out.println("connect=====obj===" +obj);
 
-                mSocket.emit("sub", obj);
                 
+                Emitter emit = mSocket.emit("sub", obj);
+
+                emit.once("sub", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        System.out.println("connect=====once-sub===" + args.toString());
+                    }
+                }).once("channel", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        System.out.println("connect=====once-channel===" + args.toString());
+                    }
+                }).once("detail", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        System.out.println("connect=====once-detail===" + args.toString());
+                    }
+                });
+                //System.out.println("connect=====emit===" +emit.toString());
 
             } catch (JSONException e) {
                 e.printStackTrace();
             }
 
+        }
+
+    }
+
+    //直播
+    public void connLive(View view) {
+        try {
+            IO.Options opts = new IO.Options();
+            opts.forceNew = true;
+            opts.reconnection = true;
+            opts.path = "/v1/ws/live";
+            Socket socket = IO.socket("http://test.58caimi.com", opts);
+            socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    System.out.println("connect===live==conn==" + args);
+                }
+            });
+            socket.on(Socket.EVENT_MESSAGE, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    System.out.println("connect==live==msg===" + args);
+                }
+            });
+            socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    System.out.println("connect==live==disconn===" + args);
+                    mTv.setText("断开连接");
+                }
+            });
+            socket.connect();
+
+            Thread.sleep(2000);
+            boolean b = socket.connected();
+            System.out.println("connect=====live==b====" + b);
+
+            if (b) {
+                mTv.setText("直播连接");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }
