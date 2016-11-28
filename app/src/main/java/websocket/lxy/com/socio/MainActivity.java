@@ -4,6 +4,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -13,6 +14,8 @@ import org.json.JSONObject;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -41,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
             opts.path = "/stock-ws";
 
 
-            mSocket = IO.socket("http://www.58caimi.com/", opts);
+            mSocket = IO.socket("https://www.58caimi.com/", opts);
 
             //mSocket = IO.socket("http://www.58caimi.com/");
 
@@ -92,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
-             mSocket.connect();
+            // mSocket.connect();
 
             /**
              *
@@ -128,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
         mSocket.off("sub");
     }
 
-    //conn
+    //conn 连接股票
     public void connServer(View view) {
 
         boolean connected = mSocket.connected();
@@ -156,7 +159,6 @@ public class MainActivity extends AppCompatActivity {
                 obj.put("symbols", array);
 
 
-                
                 Emitter emit = mSocket.emit("sub", obj);
 
                 emit.once("sub", new Emitter.Listener() {
@@ -185,37 +187,58 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    //直播
+
+
+
+    /*============================================================================================*/
+
+
+
+    //连接直播
     public void connLive(View view) {
         try {
-            IO.Options opts = new IO.Options();
-            opts.forceNew = true;
-            opts.reconnection = true;
-            opts.path = "/v1/ws/live";
-            Socket socket = IO.socket("http://test.58caimi.com", opts);
-            socket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+            IO.Options optslive = new IO.Options();
+            optslive.forceNew = true;
+            optslive.reconnection = true;
+            optslive.path = "/v1/ws/live";
+            Socket mJoinSocket = IO.socket("https://test.58caimi.com", optslive);
+
+            mJoinSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
                     System.out.println("connect===live==conn==" + args);
                 }
             });
-            socket.on(Socket.EVENT_MESSAGE, new Emitter.Listener() {
+            mJoinSocket.on(Socket.EVENT_MESSAGE, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
                     System.out.println("connect==live==msg===" + args);
                 }
             });
-            socket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
+            mJoinSocket.on(Socket.EVENT_DISCONNECT, new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
                     System.out.println("connect==live==disconn===" + args);
                     mTv.setText("断开连接");
                 }
             });
-            socket.connect();
+            mJoinSocket.on("join", new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    System.out.println("connect==live==join===" + args);
+                }
+            });
+            mJoinSocket.on("roomId", new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    System.out.println("connect==live==roomid===" + args);
+                }
+            });
 
+            mJoinSocket.connect();
             Thread.sleep(2000);
-            boolean b = socket.connected();
+
+            boolean b = mJoinSocket.connected();
             System.out.println("connect=====live==b====" + b);
 
             if (b) {
@@ -226,4 +249,34 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
+
+    //加入直播间
+    public void clickJoin(View view) {
+        Toast.makeText(MainActivity.this, "join", Toast.LENGTH_SHORT).show();
+
+        String str = "{ roomId: '5825f1ff7f6267a11e77762f' }";
+        com.alibaba.fastjson.JSONObject jsonObject = JSON.parseObject(str);
+
+        Map<String ,String> map= new HashMap<>();
+        map.put("roomId","5825f1ff7f6267a11e77762f");
+        Object json = JSON.toJSON(map);
+
+
+        JSONObject obj = new JSONObject();
+
+        try {
+            obj.put("roomId", "5825f1ff7f6267a11e77762f");
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("connect=========obj====="+obj);
+        mSocket.emit("join", obj);
+
+
+
+    }
+
+
 }

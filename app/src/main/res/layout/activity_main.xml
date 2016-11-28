@@ -21,7 +21,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="connLive"
-        android:text="直播" />
+        android:text="连接直播服务器" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="clickJoin"
+        android:text="加入直播间" />
 
     <TextView
         android:id="@+id/tv_conn"
@@ -29,7 +35,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="15dp"
         android:padding="15dp"
-        android:text="状态"
+        android:text="连接状态"
         android:textColor="#000"
         android:textSize="20sp" />
 
